@@ -111,7 +111,7 @@ class MPR121:
             if self.sound:
                 try:
                     import music
-                    music.play(['G4:0.2'], wait=False)
+                    music.pitch(2000, 40)
                 except:
                     pass
 
