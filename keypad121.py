@@ -1,4 +1,3 @@
-Python
 from yolobit import *
 from micropython import const
 import ustruct, time
@@ -75,6 +74,8 @@ class MPR121:
     
     def run(self):
         last_pressed = []
+        last_touch_time = time.ticks_ms() # 1. Bật đồng hồ bấm giờ ngầm
+        
         while True:
             try:
                 current_pressed = []
@@ -85,6 +86,13 @@ class MPR121:
                             if len(self._input) < 15:
                                 self._input += self.KEYS[i]
                                 self._need_beep = True 
+                                last_touch_time = time.ticks_ms() # 2. Gia hạn thời gian mỗi khi có ngón tay bấm phím
+                
+                # 3. CHỐT KIỂM TRA TIMEOUT (Sau 5000ms = 5 giây)
+                # Nếu có chữ trong bộ nhớ VÀ đã trôi qua quá 5 giây kể từ lần bấm cuối cùng
+                if len(self._input) > 0 and time.ticks_diff(time.ticks_ms(), last_touch_time) > 5000:
+                    self._input = '' # Xóa bộ nhớ trong im lặng
+                    
                 last_pressed = current_pressed
                 time.sleep_ms(40)
             except OSError:
@@ -96,7 +104,7 @@ class MPR121:
             if self.sound:
                 try:
                     import music
-                    music.play(['G5:0.3'], wait=True)
+                    music.play(['G5:1'], wait=True)
                 except:
                     pass
 
@@ -107,5 +115,4 @@ class MPR121:
         self._check_beep()
         return self._input
 
-# Khởi tạo sẵn đối tượng keypad để Blockly gọi
 keypad = MPR121()
