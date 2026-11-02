@@ -111,7 +111,7 @@ class MPR121:
             if self.sound:
                 try:
                     import music
-                    music.pitch(2000, 40)
+                    music.pitch(3000, 15)
                 except:
                     pass
 
