@@ -26,7 +26,11 @@ class MPR121:
         self._register8(MPR121_SOFT_RESET, 0x63)
         time.sleep_ms(10)
         self._register8(MPR121_ELECTRODE_CONFIG, 0x00)
-        self.set_thresholds(40, 20)
+        
+        # GIẢM ĐỘ NHẠY ĐỂ CHỐNG CHẠM PHÍM (Ghosting)
+        # Số càng cao thì ấn phải càng mạnh tay mạch mới nhận
+        self.set_thresholds(60, 30) 
+        
         self._register8(0x5C, 0x10)
         self._register8(0x5D, 0x20)
         self._register8(MPR121_ELECTRODE_CONFIG, 0x8F)
@@ -60,21 +64,26 @@ class MPR121:
         except OSError:
             return 0
   
-    def is_touched(self, electrode):
-        z = int(electrode)
-        if z == 10: z = 8
-        elif z == 11: z = 11
+    # ĐÃ SỬA LỖI MA TRẬN CHỈ MỤC PHÍM TẠI ĐÂY
+    def is_touched(self, i):
+        if i == 0:
+            z = 4
+        elif i == 11:
+            z = 8
         else:
-            y = 3-(z//3)
-            if z % 3 == 0: y = y + 1
-            x = z - (3-y)*3-1
-            z = 4*x + y
+            z = i
+            y = 3 - (z // 3)
+            if z % 3 == 0:
+                y = y + 1
+            x = z - (3 - y) * 3 - 1
+            z = 4 * x + y
+            
         t = self.touched()
         return (t & (1 << z)) != 0
     
     def run(self):
         last_pressed = []
-        last_touch_time = time.ticks_ms() # 1. Bật đồng hồ bấm giờ ngầm
+        last_touch_time = time.ticks_ms()
         
         while True:
             try:
@@ -86,12 +95,10 @@ class MPR121:
                             if len(self._input) < 15:
                                 self._input += self.KEYS[i]
                                 self._need_beep = True 
-                                last_touch_time = time.ticks_ms() # 2. Gia hạn thời gian mỗi khi có ngón tay bấm phím
+                                last_touch_time = time.ticks_ms()
                 
-                # 3. CHỐT KIỂM TRA TIMEOUT (Sau 5000ms = 5 giây)
-                # Nếu có chữ trong bộ nhớ VÀ đã trôi qua quá 5 giây kể từ lần bấm cuối cùng
                 if len(self._input) > 0 and time.ticks_diff(time.ticks_ms(), last_touch_time) > 5000:
-                    self._input = '' # Xóa bộ nhớ trong im lặng
+                    self._input = ''
                     
                 last_pressed = current_pressed
                 time.sleep_ms(40)
@@ -104,7 +111,7 @@ class MPR121:
             if self.sound:
                 try:
                     import music
-                    music.play(['G5:1'], wait=True)
+                    music.play(['G4:0.3'], wait=True)
                 except:
                     pass
 
